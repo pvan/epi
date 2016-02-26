@@ -1,0 +1,366 @@
+<html>
+    <head>
+		<script type="text/javascript">
+
+function getPlayerCount() { return parseInt(document.getElementById("playerCountDisp").innerHTML); }
+function incrementPlayerCount(amt){ document.getElementById("playerCountDisp").innerHTML = getPlayerCount() + amt; updateDisplays(); }
+
+function getFunding() { return parseInt(document.getElementById("fundingDisp").innerHTML); }
+function incrementFunding(amt){ document.getElementById("fundingDisp").innerHTML = getFunding() + amt; updateDisplays(); }
+
+function getDrawn() { return parseInt(document.getElementById("drawnDisp").innerHTML); }
+function incrementDrawn(amt){ document.getElementById("drawnDisp").innerHTML = getDrawn() + amt; updateDisplays(); }
+
+function getEpis() { return parseInt(document.getElementById("episDisp").innerHTML); }
+function incrementEpis(amt){ document.getElementById("episDisp").innerHTML = getEpis() + amt; updateDisplays(); }
+
+
+
+function calcStackCounts(funding) {
+	totalCityCards = 12*4;
+	totalPlayerCards = totalCityCards + funding;
+	
+	playerCount = getPlayerCount();
+	deltCards = 4*2;
+	if (playerCount == 3) { deltCards = 3*3; }
+	
+	splitCards = totalPlayerCards - deltCards;
+	dealToStack = 0;
+	var stack = new Array(1, 1, 1, 1, 1);  // start w/ an epi in each
+	for (i = 0; i < splitCards; i++) {
+		stack[dealToStack]++;
+		dealToStack = (dealToStack+1) % 5;
+	}
+	/*
+	document.getElementById("stack1Disp").innerHTML = stack[0];
+	document.getElementById("stack2Disp").innerHTML = stack[1];
+	document.getElementById("stack3Disp").innerHTML = stack[2];
+	document.getElementById("stack4Disp").innerHTML = stack[3];
+	document.getElementById("stack5Disp").innerHTML = stack[4];
+	*/
+	return stack;
+}
+
+function updateDisplays() {
+	
+	baseCardStack = nextCardIsInStack(getDrawn());
+	//document.getElementById("drawStackDisp").innerHTML = baseCardStack;
+	document.getElementById("stackDiv"+1).style.border = "none";
+	document.getElementById("stackDiv"+2).style.border = "none";
+	document.getElementById("stackDiv"+3).style.border = "none";
+	document.getElementById("stackDiv"+4).style.border = "none";
+	document.getElementById("stackDiv"+5).style.border = "none";
+	document.getElementById("stackDiv"+baseCardStack).style.border = "1px solid #000";
+	
+	stack = calcStackCounts(getFunding());
+	cardsLeftInThisStack = stack[baseCardStack-1]-calcCardsDrawnFromThisStack(getDrawn());
+	//document.getElementById("leftInStackDisp").innerHTML = cardsLeftInThisStack;
+	for (i=1; i<baseCardStack; i++) { document.getElementById("stack"+(i)+"Disp").innerHTML = 0; }
+	document.getElementById("stack"+baseCardStack+"Disp").innerHTML = cardsLeftInThisStack;
+	for (i=(baseCardStack+1); i<6; i++) { document.getElementById("stack"+(i)+"Disp").innerHTML = stack[i-1]; }
+	
+	
+	var displayAmt = 9;
+	var runningTotalChance = 0;
+	var lastCardStack = baseCardStack;
+	var lastCardStack = baseCardStack;
+	for (var i = 0; i < displayAmt; i++) {
+	
+		if (getDrawn()+i > getMaximumCardsToDraw) {
+			document.getElementById(name).innerHTML = "end";
+			continue;
+		}
+	
+		thisCardStack = nextCardIsInStack(getDrawn()+i);
+		if (thisCardStack != lastCardStack) runningTotalChance = 0;
+		
+		thisCardChance = calcChance(i);
+		runningTotalChance += thisCardChance;
+		
+		name = "chance"+i.toString()+"Disp";
+		document.getElementById(name).innerHTML = Math.round((runningTotalChance*100)) + "%";
+		
+		lastCardStack = thisCardStack;
+	}
+	
+	document.getElementById("validDisp").innerHTML = isStateValid();
+	
+	document.body.style.background = 'white';
+	if (!isStateValid()) {
+		document.body.style.background = '#e1e1e1';
+		document.getElementById("footer").innerHTML = "invalid state";
+	}
+}
+
+function nextCardIsInStack(cardsDrawn) {
+	cardsFromThisStack = cardsDrawn;
+	drawingFromStack = 1;
+	stack = calcStackCounts(getFunding());
+	if (cardsFromThisStack>=stack[0]) { drawingFromStack++; cardsFromThisStack-=stack[0];
+		if (cardsFromThisStack>=stack[1]) { drawingFromStack++; cardsFromThisStack-=stack[1];
+			if (cardsFromThisStack>=stack[2]) { drawingFromStack++; cardsFromThisStack-=stack[2];
+				if (cardsFromThisStack>=stack[3]) { drawingFromStack++; cardsFromThisStack-=stack[3];
+				}
+			}
+		}
+	}
+	return drawingFromStack;
+}
+
+function calcCardsDrawnFromThisStack(totalCardsDrawn) {
+	cardsFromThisStack = totalCardsDrawn;
+	drawingFromStack = 1;
+	if (cardsFromThisStack>=stack[0]) { drawingFromStack++; cardsFromThisStack-=stack[0];
+		if (cardsFromThisStack>=stack[1]) { drawingFromStack++; cardsFromThisStack-=stack[1];
+			if (cardsFromThisStack>=stack[2]) { drawingFromStack++; cardsFromThisStack-=stack[2];
+				if (cardsFromThisStack>=stack[3]) { drawingFromStack++; cardsFromThisStack-=stack[3];
+				}
+			}
+		}
+	}
+	return cardsFromThisStack;
+}
+
+const EPIS_IN_GAME = 5;
+
+function getMaximumCardsToDraw() {
+	return (12*4)-(getPlayerCount()==3?9:8)+EPIS_IN_GAME;
+}
+
+function isStateValid() {
+	cardsDrawn = getDrawn();
+	episDrawn = getEpis();
+	stack = calcStackCounts(getFunding());
+	
+	if (episDrawn < 0 || episDrawn > EPIS_IN_GAME) return false;
+	
+	cardsToBeDrawn = getMaximumCardsToDraw();
+	if (cardsDrawn < 0 || cardsDrawn > cardsToBeDrawn) return false;
+	
+	currentStack = nextCardIsInStack(cardsDrawn);
+	if (episDrawn > currentStack) return false;
+	if (episDrawn < currentStack-1) return false;
+	
+	playerCount = getPlayerCount();
+	fundingCount = getFunding();
+	if (playerCount > 4 || playerCount < 2) return false;
+	if (fundingCount > 10 || fundingCount < 0) return false;
+	
+	return true;
+}
+
+function chanceCardIsEpi(totalCardsDrawn, totalEpisDrawn, turnsAhead, stacks) {
+	
+	stackCardIsIn = nextCardIsInStack(totalCardsDrawn+turnsAhead);
+	
+	currentStack = nextCardIsInStack(totalCardsDrawn);
+	
+	if (stackCardIsIn != currentStack) {
+		epiInCardStack = 1; // for now assume we can't draw an epi "early" from a buried stack 
+		return epiInCardStack / stacks[stackCardIsIn-1];
+	} else {
+		epiInCurrentStack = 0;
+		if (totalEpisDrawn < currentStack) { epiInCurrentStack = 1; } //assume only 1 epi per stack 
+		cardsFromThisStack = calcCardsDrawnFromThisStack(totalCardsDrawn);
+		cardsLeftInThisStack = stacks[currentStack-1]-cardsFromThisStack;
+		return epiInCurrentStack / cardsLeftInThisStack;
+	}
+}
+
+function calcChance(turnsAhead) {
+	stack = calcStackCounts(getFunding());
+	return chanceCardIsEpi(getDrawn(), getEpis(), turnsAhead, stack);
+}
+
+
+
+window.onload = updateDisplays;
+
+		</script>
+		
+		<link href='https://fonts.googleapis.com/css?family=Goudy+Bookletter+1911' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Ropa+Sans' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Abel' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Droid+Sans' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Dosis' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+		
+		<style>
+		
+			/*
+			
+			https://www.designernews.co/stories/29452-what-is-your-favorite-font-for-displaying-numbers-
+			
+			body { font: normal 1.2em 'Goudy Bookletter 1911', sans-serif }
+			button { font-family: 'Goudy Bookletter 1911' }
+			
+			body { font: normal 1.2em 'Ropa Sans', sans-serif }
+			button { font-family: 'Ropa Sans' }
+			
+			body { font: normal 1.2em 'Abel', sans-serif }
+			button { font-family: 'Abel' }
+			
+			body { font: normal 1.2em 'Droid Sans', sans-serif }
+			button { font-family: 'Droid Sans' }
+			
+			body { font: normal 1.2em 'Montserrat', sans-serif }
+			button { font-family: 'Montserrat' }
+			
+			body { font: normal 1.2em 'Dosis', sans-serif }
+			button { padding: 0.15em 0.6em 0.15em 0.6em; font-family: 'Dosis' }
+			
+			body { margin-left: 0; margin-right: 0; font: normal 1.2em 'Roboto', sans-serif }
+			button { padding: 0.15em 0.6em 0.15em 0.6em; font-family: 'Roboto' }
+			*/
+			
+			body { margin-left: 0; margin-right: 0; font: normal 1.2em 'Georgia', sans-serif }
+			button { padding: 0.15em 0.6em 0.15em 0.6em; font-family: 'Georgia' }
+			
+		
+			div.basicL {padding:5px; text-align:center; display:inline-block }
+			div.row {display: block;}
+			
+			div.faded {color:#7f7f7f}
+			
+			p.numInc {margin:4px}
+			a.bigNum {font-size: 3.5em; width: 1.2em; display: inline-block; margin:0}
+			
+			button.small { font-size: 1.3em }
+			button.med { font-size: 1.8em; }
+			
+			#footer { 
+				position:fixed; bottom:0; z-index:999999; 
+				
+				text-align:center; 
+				background-color:#e1e1e1; 
+				font-size: 2em;
+				
+				width:100%; float:left;
+				margin:0;
+				padding:0;
+				border:0;
+			}
+		
+		</style>
+    </head>
+    <body>
+	
+	<div style="width=400px; margin:0 auto; text-align:center">
+	
+	
+		<div style="row">
+		<div class="basicL" style="margin-right:1em">
+			players
+			<p class="numInc">
+				<a id="playerCountDisp">4</a>
+				<button class="small" onclick="incrementPlayerCount(1)">+1</button>
+				<button class="small" onclick="incrementPlayerCount(-1)">-1</button>
+			</p>
+		</div>
+		
+		<div class="basicL">
+			funding
+			<p class="numInc">
+				<a id="fundingDisp">0</a>
+				<button class="small" onclick="incrementFunding(1)">+1</button>
+				<button class="small" onclick="incrementFunding(-1)">-1</button>
+			</p>
+		</div>
+		</div>
+		
+		<div class="faded" style="margin:0.5em">
+		<div style="row">
+		<div class="basicL" id="stackDiv1">
+			stk1
+			<p class="numInc">
+				<a id="stack1Disp">0</a> 
+			</p>
+		</div>
+		<div class="basicL" id="stackDiv2">
+			stk2
+			<p class="numInc">
+				<a id="stack2Disp">0</a> 
+			</p>
+		</div>
+		<div class="basicL" id="stackDiv3">
+			stk3
+			<p class="numInc">
+				<a id="stack3Disp">0</a> 
+			</p>
+		</div>
+		<div class="basicL" id="stackDiv4">
+			stk4
+			<p class="numInc">
+				<a id="stack4Disp">0</a> 
+			</p>
+		</div>
+		<div class="basicL" id="stackDiv5">
+			stk5
+			<p class="numInc">
+				<a id="stack5Disp">0</a> 
+			</p>
+		</div>
+		</div>
+		</div>
+		
+		<div class="mainBtns">
+			<div style="row">
+			<div class="basicL">
+				<p class="numInc">
+				<button class="med" onclick="incrementDrawn(2)">+2</button>
+				<button class="med" onclick="incrementDrawn(1)">+1</button>
+				<a id="drawnDisp" class="bigNum">0</a>
+				<button class="med" onclick="incrementDrawn(-1)">-1</button>
+				<button class="med" onclick="incrementDrawn(-getDrawn())">-all</button>
+				</p>
+				<div class="faded">cards drawn</div>
+			</div>
+			</div>
+			
+			<div style="row">
+			<div class="basicL">
+				<p class="numInc">
+				<button class="med" onclick="incrementEpis(1)">+1</button>
+				<a id="episDisp" class="bigNum">0</a>
+				<button class="med" onclick="incrementEpis(-1)">-1</button>
+				</p>
+				<div class="faded">epidemics</div>
+			</div>
+			</div>
+		</div>
+		
+		<br>
+		
+		<div class="row" style="line-height:1.4em"> <!-- style="line-height:22px"> -->
+			<div class="basicL" style="text-align-last:justify; padding:0">
+				1st card:<br>
+				2nd card:<br>
+				3rd card:<br>
+				4th card:<br>
+				5th card:<br>
+				6th card:<br>
+				7th card:<br>
+				8th card:<br>
+				9th card:<br>
+			</div>
+			<div class="basicL" style="text-align:left padding:0">
+				<a id="chance0Disp">0</a><br>
+				<a id="chance1Disp">0</a><br>
+				<a id="chance2Disp">0</a><br>
+				<a id="chance3Disp">0</a><br>
+				<a id="chance4Disp">0</a><br>
+				<a id="chance5Disp">0</a><br>
+				<a id="chance6Disp">0</a><br>
+				<a id="chance7Disp">0</a><br>
+				<a id="chance8Disp">0</a><br>
+			</div>
+		</div>
+		
+	</div>
+		
+	<div id="footer"></div>
+		
+    </body>
+	
+</html>
