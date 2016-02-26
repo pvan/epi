@@ -1,0 +1,2 @@
+# epi
+pandemic epidemic calculator
