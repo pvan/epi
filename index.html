@@ -83,12 +83,14 @@ function updateDisplays() {
 		lastCardStack = thisCardStack;
 	}
 	
-	document.getElementById("validDisp").innerHTML = isStateValid();
+	//document.getElementById("validDisp").innerHTML = isStateValid();
 	
-	document.body.style.background = 'white';
 	if (!isStateValid()) {
-		document.body.style.background = '#e1e1e1';
+		//document.body.style.background = '#e1e1e1';
 		document.getElementById("footer").innerHTML = "invalid state";
+	} else {
+		//document.body.style.background = 'white';
+		document.getElementById("footer").innerHTML = "";
 	}
 }
 
@@ -211,7 +213,7 @@ window.onload = updateDisplays;
 			body { margin-left: 0; margin-right: 0; font: normal 1.2em 'Georgia', sans-serif }
 			button { padding: 0.15em 0.6em 0.15em 0.6em; font-family: 'Georgia' }
 			*/
-			body { font: normal 1.2em 'Ropa Sans', sans-serif }
+			body { font: normal 1.6em 'Ropa Sans', sans-serif }
 			button { font-family: 'Ropa Sans' }
 			
 			
